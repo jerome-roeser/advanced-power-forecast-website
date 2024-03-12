@@ -3,46 +3,61 @@ import streamlit as st
 import requests
 
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
 import datetime as dt
+import pandas as pd
+
+import matplotlib.pyplot as plt
 import matplotlib.dates as dates
+import plotly.graph_objects as go
+
 
 # ==============================================================================
 # ====================== Streamlit Interface ===================================
 
-'''
-# Advanced Power Prediction
-(v0.2)
-'''
-
 ### Sidebar ====================================================================
 # create a sidebar in order to take user inputs
 st.sidebar.markdown(f"""
-    # User Input
-    """)
+   # User Input
+   """)
 
-today_date = st.sidebar.date_input(
-                            label='Power prediction date',
-                            value=dt.date(2021, 7, 6),
-                            min_value=dt.date(2020, 1, 1),
-                            max_value=dt.date(2022, 12, 30),
-                            )
-# predicition_time = st.sidebar.time_input(
-#                             label='Power prediction time',
-#                             value=datetime.time(0, 00),
-#                             step=3600)
-#input_prediction_date = f"{prediction_date}"
-# st.sidebar.write(input_prediction_date)
+# prepare callbacks
+# (see:https://docs.streamlit.io/library/advanced-features/button-behavior-and-examples)
 
+if 'today' not in st.session_state:
+    st.session_state['today'] = dt.date(2021, 7, 6)
 
-#locations = st.sidebar.expander("Available locations")
-# days_to_display = st.sidebar.slider('Select the number of past data to display', 1, 10, 5)
+def add_day():
+    st.session_state['today'] += dt.timedelta(days=1)
 
+def sub_day():
+    st.session_state['today'] -= dt.timedelta(days=1)
 
-#location = locations.radio("Locations", ["Berlin - Tempelhof", "Berlin - Tegel", "Berlin - Schönefeld"])
+st.session_state['today'] = st.sidebar.date_input(
+                             label='Simulated today',
+                             value= st.session_state['today'],
+                             min_value=dt.date(2020, 1, 1),
+                             max_value=dt.date(2022, 12, 30),
+)
 
+columns = st.sidebar.columns(2)
+columns[0].button('Day before', on_click=sub_day)
+columns[1].button('Day after', on_click=add_day)
+
+#st.write( st.session_state['today'])
+
+# used in the plots
+today_date = st.session_state['today']
+
+### Main window ====================================================================
+
+f"""
+# Day-Ahead Power Forecast
+(v0.2)
+
+Today is the **{today_date}**. The Day-Ahead prediction is for the \
+     **{today_date + pd.Timedelta(days=1)}**.
+     
+"""
 
 ### API calls ==================================================================
 # make api call
@@ -78,7 +93,7 @@ time = plot_df.utc_time.values
 
 sep_future = today_dt + pd.Timedelta(days=1)
 sep_past = today_dt
-sep_order = today_dt - pd.Timedelta(hours=36)
+sep_order = today_dt + pd.Timedelta(hours=12)
 
 # plot
 fig, ax = plt.subplots(figsize=(15,5))
@@ -103,15 +118,24 @@ ax.fill_between(time, lower_bound, upper_bound, step='pre',
                 alpha=alpha_stats,
                 label='std')
 
-# true
+# true current production data
 current = 37 # current production data
 ax.step(time[:current], plot_df.cap_fac.values[:current], where='pre',
-        color='orange', linewidth=3, label='true')
+        color='orange', linewidth=4, label='true')
 
-# prediction
+# prediction day ahead data
 hori = -24
 ax.step(time[hori:], plot_df.pred.values[hori:], where='pre',
-        color='orange', linewidth=3, linestyle=':', label='pred')
+        color='orange', linewidth=4, linestyle=':', label='pred')
+
+
+show_true = st.sidebar.radio('Show true values', ('Yes', 'No'))
+if show_true == 'Yes':
+    ax.step(time[-36:], plot_df.cap_fac.values[-36:], where='pre',
+         color='orange', linewidth=4, linestyle='-', alpha=0.4)
+    st.sidebar.write('')
+else:
+    st.sidebar.write('')
 
 # date ticks
 ax.xaxis.set_major_locator(dates.HourLocator(byhour=range(24), interval=12, tz='UTC'))
@@ -126,11 +150,83 @@ ax.annotate('day-ahead',(0.77,0.9), xycoords='subfigure fraction')
 ax.annotate('today',(0.48,0.9), xycoords='subfigure fraction')
 ax.annotate('day-behind',(0.15,0.9), xycoords='subfigure fraction')
 ax.annotate('order book closed',(0.51,0.77), xycoords='subfigure fraction')
+ax.set_title(f"Day Ahead prediction for { sep_future.strftime('%d/%m/%Y') }")
 
 ax.legend();
 
 ##
 st.pyplot(fig)
+
+### ============================================================================
+
+#import plotly.graph_objects as go
+
+# fig = go.Figure()
+
+# # Stats
+# alpha_stats = 0.2
+# fig.add_trace(
+#     go.Scatter(
+#         x=plot_df['utc_time'],
+#         y=plot_df['min'],
+#         mode='lines',
+#         line=dict(color="black", width=1, dash="dot", shape='hv'),
+#         name='min'
+#     )
+# )
+
+# fig.add_trace(
+#     go.Scatter(
+#         x=plot_df['utc_time'],
+#         y=plot_df['max'],
+#         mode='lines',
+#         line=dict(color="black", width=1, dash="dot", shape='hv'),
+#         name='max'
+#     )
+# )
+# fig.add_trace(
+#     go.Scatter(
+#         x=plot_df['utc_time'],
+#         y=plot_df['mean'],
+#         mode='lines',
+#         line=dict(color="black", width=1, shape='hv'),
+#         name='mean'
+#     )
+# )
+# fig.add_trace(
+#     go.Scatter(
+#         x=plot_df['utc_time'],
+#         y=plot_df['mean'] - plot_df['std'],
+#         mode='lines',
+#         fill='tonexty',
+#         fillcolor='rgba(128,128,128,0.2)',
+#         line=dict(width=0, shape='hv'),
+#         name='std'
+#     )
+# )
+# fig.add_trace(
+#     go.Scatter(
+#         x=plot_df['utc_time'][:37],  # Assuming 37 is the index where current production data ends
+#         y=plot_df['cap_fac'][:37],
+#         mode='lines',
+#         line=dict(color="orange", width=3, shape='hv'),
+#         name='true'
+#     )
+# )
+# fig.add_trace(
+#     go.Scatter(
+#         x=plot_df['utc_time'][-24:],  # Assuming you're taking the last 24 hours for prediction
+#         y=plot_df['pred'][-24:],
+#         mode='lines', # mode='lines',
+#         line=dict(color="orange", width=3, dash="dash", shape='hv'),
+#         name='pred'
+#     )
+# )
+
+# ###
+# #fig.show()
+# #st.pyplot(fig)
+# st.plotly_chart(fig, use_container_width=True)
 
 
 ### electricity
