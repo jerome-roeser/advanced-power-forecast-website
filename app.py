@@ -110,7 +110,7 @@ ax.step(time[:current], plot_df.electricity.values[:current], where='pre',
 # prediction
 hori = -24
 ax.step(time[hori:], plot_df.pred.values[hori:], where='pre',
-        color='orange', linewidth=3, linestyle='--', label='pred')
+        color='orange', linewidth=3, linestyle=':', label='pred')
 
 # date ticks
 ax.xaxis.set_major_locator(dates.HourLocator(byhour=range(24), interval=12, tz='UTC'))
