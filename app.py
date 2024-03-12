@@ -56,13 +56,13 @@ f"""
 
 Today is the **{today_date}**. The Day-Ahead prediction is for the \
      **{today_date + pd.Timedelta(days=1)}**.
-     
+
 """
 
 ### API calls ==================================================================
 # make api call
 #base_url = "http://127.0.0.1:8000"
-base_url = "http://127.0.0.1:8000"
+base_url = "https://power-v2-pdymu2v2na-ew.a.run.app"
 # ==============================================================================
 
 # Visualisation
