@@ -51,9 +51,12 @@ base_url = "http://127.0.0.1:8000"
 # ==============================================================================
 
 # Visualisation
+
+#
 params_visu ={
-    'input_date':today_date,   # today = '2000-05-15' # would come from streamlit user
-    'power_source': 'pv'
+    'input_date': today_date,   # today = '2000-05-15' # would come from streamlit user
+    'power_source': 'pv',
+    'capacity': 'true'
     }
 endpoint_visu = "/visualisation"
 url_visu = f"{base_url}{endpoint_visu}"
@@ -67,23 +70,21 @@ plot_df.utc_time = pd.to_datetime(plot_df.utc_time,utc=True)
 #print(plot_df)
 #breakpoint()
 
+### capacity
 
+# time variables
 today_dt = pd.Timestamp(today_date, tz='UTC')
 time = plot_df.utc_time.values
 
-#sep_future = today_dt
-#sep_past = today_dt - pd.Timedelta(days=1)
 sep_future = today_dt + pd.Timedelta(days=1)
 sep_past = today_dt
-
-#sep_order = today_dt - pd.Timedelta(hours=12)
 sep_order = today_dt - pd.Timedelta(hours=36)
 
+# plot
 fig, ax = plt.subplots(figsize=(15,5))
-# time
+
 ax.axvline(sep_past, color='k', linewidth=0.7)
 ax.axvline(sep_future, color='k', linewidth=0.7)
-#ax.axvline(sep_order, color='k', linewidth=0.7, linestyle='--')
 ax.vlines(sep_order, ymin=0, ymax=100, color='k', linewidth=0.7, linestyle='--')
 
 # stats
@@ -104,7 +105,7 @@ ax.fill_between(time, lower_bound, upper_bound, step='pre',
 
 # true
 current = 37 # current production data
-ax.step(time[:current], plot_df.electricity.values[:current], where='pre',
+ax.step(time[:current], plot_df.cap_fac.values[:current], where='pre',
         color='orange', linewidth=3, label='true')
 
 # prediction
@@ -116,11 +117,10 @@ ax.step(time[hori:], plot_df.pred.values[hori:], where='pre',
 ax.xaxis.set_major_locator(dates.HourLocator(byhour=range(24), interval=12, tz='UTC'))
 ax.xaxis.set_major_formatter(dates.DateFormatter('%H:%M %d/%m/%Y'))
 
-#ax.set_xlim(today_dt - pd.Timedelta(days=2), today_dt + pd.Timedelta(days=1))
 ax.set_xlim(today_dt - pd.Timedelta(days=1), today_dt + pd.Timedelta(days=2))
-ax.set_ylim(0,1.0)
+ax.set_ylim(0,120.0)
 ax.set_xlabel('Time')
-#ax.set_ylabel('Capacity factor in %')
+ax.set_ylabel('Capacity factor in %')
 
 ax.annotate('day-ahead',(0.77,0.9), xycoords='subfigure fraction')
 ax.annotate('today',(0.48,0.9), xycoords='subfigure fraction')
@@ -131,6 +131,70 @@ ax.legend();
 
 ##
 st.pyplot(fig)
+
+
+### electricity
+
+# # time variables
+# today_dt = pd.Timestamp(today_date, tz='UTC')
+# time = plot_df.utc_time.values
+
+# sep_future = today_dt + pd.Timedelta(days=1)
+# sep_past = today_dt
+# sep_order = today_dt - pd.Timedelta(hours=36)
+
+# # plot
+# fig, ax = plt.subplots(figsize=(15,5))
+
+# ax.axvline(sep_past, color='k', linewidth=0.7)
+# ax.axvline(sep_future, color='k', linewidth=0.7)
+# ax.vlines(sep_order, ymin=0, ymax=100, color='k', linewidth=0.7, linestyle='--')
+
+# # stats
+# alpha_stats = 0.2
+# ax.step(time, plot_df['min'].values, where='pre',
+#         color='k', linestyle=':', alpha=alpha_stats, label='min')
+# ax.step(time, plot_df['max'].values, where='pre',
+#         color='k', linestyle=':', alpha=alpha_stats, label='max')
+# ax.step(time, plot_df['mean'].values, where='pre',
+#         color='k', linestyle='-', alpha=alpha_stats, label='mean')
+
+# lower_bound = plot_df['mean'].values - 1 * plot_df['std'].values
+# upper_bound = plot_df['mean'].values + 1 * plot_df['std'].values
+# ax.fill_between(time, lower_bound, upper_bound, step='pre',
+#                 color='gray',
+#                 alpha=alpha_stats,
+#                 label='std')
+
+# # true
+# current = 37 # current production data
+# ax.step(time[:current], plot_df.electricity.values[:current], where='pre',
+#         color='orange', linewidth=3, label='true')
+
+# # prediction
+# hori = -24
+# ax.step(time[hori:], plot_df.pred.values[hori:], where='pre',
+#         color='orange', linewidth=3, linestyle=':', label='pred')
+
+# # date ticks
+# ax.xaxis.set_major_locator(dates.HourLocator(byhour=range(24), interval=12, tz='UTC'))
+# ax.xaxis.set_major_formatter(dates.DateFormatter('%H:%M %d/%m/%Y'))
+
+# #ax.set_xlim(today_dt - pd.Timedelta(days=2), today_dt + pd.Timedelta(days=1))
+# ax.set_xlim(today_dt - pd.Timedelta(days=1), today_dt + pd.Timedelta(days=2))
+# ax.set_ylim(0,1.0)
+# ax.set_xlabel('Time')
+# #ax.set_ylabel('Capacity factor in %')
+
+# ax.annotate('day-ahead',(0.77,0.9), xycoords='subfigure fraction')
+# ax.annotate('today',(0.48,0.9), xycoords='subfigure fraction')
+# ax.annotate('day-behind',(0.15,0.9), xycoords='subfigure fraction')
+# ax.annotate('order book closed',(0.51,0.77), xycoords='subfigure fraction')
+
+# ax.legend();
+
+# ##
+# st.pyplot(fig)
 
 
 
