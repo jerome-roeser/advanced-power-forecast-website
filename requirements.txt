@@ -1,4 +1,11 @@
 
 streamlit
-matplotlib
 requests
+
+numpy
+pandas
+datetime
+
+matplotlib
+plotly
+

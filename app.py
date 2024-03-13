@@ -11,42 +11,82 @@ import matplotlib.dates as dates
 import plotly.graph_objects as go
 
 
+### API call ==================================================================
+#base_url = "http://127.0.0.1:8000"
+base_url = "https://power-v2-pdymu2v2na-ew.a.run.app"
+#------------------------------------------------------------------------------
+
+def call_visu(today_date):
+
+    params_visu ={
+        'input_date': today_date,   # '2000-05-15' (dt.date())
+        'power_source': 'pv',
+        'capacity': 'true'
+        }
+
+    endpoint_visu = "/visualisation"
+    url_visu = f"{base_url}{endpoint_visu}"
+    response_visu = requests.get(url_visu, params_visu).json()
+
+    plot_df = pd.DataFrame.from_dict(response_visu)
+    plot_df.utc_time = pd.to_datetime(plot_df.utc_time,utc=True)
+
+    return plot_df
+
+# Session states and Callbacks =================================================
+# (see:https://docs.streamlit.io/library/advanced-features/button-behavior-and-examples)
+
+def add_day():
+    st.session_state['today'] += dt.timedelta(days=1)
+    st.session_state['plot_df'] = call_visu( st.session_state['today'] )
+
+def sub_day():
+    st.session_state['today'] -= dt.timedelta(days=1)
+    st.session_state['plot_df'] = call_visu( st.session_state['today'] )
+
+# def calender(b):
+#     st.session_state['plot_df'] = call_visu( b )
+
+
+# initialize session states
+if 'today' not in st.session_state:
+    st.session_state['today'] = dt.date(2021, 7, 6) # default date
+
+if 'plot_df' not in st.session_state:
+    st.session_state['plot_df'] = call_visu( st.session_state['today'] )
+
 # ==============================================================================
 # ====================== Streamlit Interface ===================================
 
 ### Sidebar ====================================================================
-# create a sidebar in order to take user inputs
 st.sidebar.markdown(f"""
    # User Input
    """)
 
-# prepare callbacks
-# (see:https://docs.streamlit.io/library/advanced-features/button-behavior-and-examples)
 
-if 'today' not in st.session_state:
-    st.session_state['today'] = dt.date(2021, 7, 6)
-
-def add_day():
-    st.session_state['today'] += dt.timedelta(days=1)
-
-def sub_day():
-    st.session_state['today'] -= dt.timedelta(days=1)
-
-st.session_state['today'] = st.sidebar.date_input(
+# Calender select
+calender_today = st.sidebar.date_input(
                              label='Simulated today',
                              value= st.session_state['today'],
                              min_value=dt.date(2020, 1, 1),
                              max_value=dt.date(2022, 12, 30),
 )
 
+if st.session_state['today'] != calender_today:
+
+    st.session_state['today'] = calender_today
+    st.session_state['plot_df'] = call_visu( st.session_state['today'] )
+
+
+# Move a day forth and back
 columns = st.sidebar.columns(2)
 columns[0].button('Day before', on_click=sub_day)
 columns[1].button('Day after', on_click=add_day)
 
-#st.write( st.session_state['today'])
+# Show values
+show_true = st.sidebar.radio('Show true values', ('Yes', 'No'))
 
-# used in the plots
-today_date = st.session_state['today']
+
 
 ### Main window ====================================================================
 
@@ -54,36 +94,16 @@ f"""
 # Day-Ahead Power Forecast
 (v0.2)
 
-Today is the **{today_date}**. The Day-Ahead prediction is for the \
-     **{today_date + pd.Timedelta(days=1)}**.
-     
+Today is the **{st.session_state['today']}**. The Day-Ahead prediction is for the \
+     **{st.session_state['today'] + pd.Timedelta(days=1)}**.
+
 """
 
-### API calls ==================================================================
-# make api call
-#base_url = "http://127.0.0.1:8000"
-base_url = "http://127.0.0.1:8000"
-# ==============================================================================
-
-# Visualisation
-
-#
-params_visu ={
-    'input_date': today_date,   # today = '2000-05-15' # would come from streamlit user
-    'power_source': 'pv',
-    'capacity': 'true'
-    }
-endpoint_visu = "/visualisation"
-url_visu = f"{base_url}{endpoint_visu}"
-response_visu = requests.get(url_visu, params_visu).json()
-
-plot_df = pd.DataFrame.from_dict(response_visu)
-plot_df.utc_time = pd.to_datetime(plot_df.utc_time,utc=True)
-
 ### Show plots =================================================================
-
-#print(plot_df)
-#breakpoint()
+# used in the plots
+today_date = st.session_state['today']
+plot_df = st.session_state['plot_df']
+#------------------------------------------------------------------------------
 
 ### capacity
 
@@ -128,8 +148,7 @@ hori = -24
 ax.step(time[hori:], plot_df.pred.values[hori:], where='pre',
         color='orange', linewidth=4, linestyle=':', label='pred')
 
-
-show_true = st.sidebar.radio('Show true values', ('Yes', 'No'))
+###
 if show_true == 'Yes':
     ax.step(time[-36:], plot_df.cap_fac.values[-36:], where='pre',
          color='orange', linewidth=4, linestyle='-', alpha=0.4)
