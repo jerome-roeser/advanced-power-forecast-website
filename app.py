@@ -82,7 +82,7 @@ columns[0].button('Day before', on_click=sub_day)
 columns[1].button('Day after', on_click=add_day)
 
 # Show values
-show_true = st.sidebar.radio('Show true values', ('Yes', 'No'))
+show_true = st.sidebar.radio('Show true values', ('No', 'Yes'))
 
 
 ### Main window ====================================================================
@@ -104,8 +104,8 @@ dayahead = st.session_state['today'] + pd.Timedelta(days=1)
 
 
 columns = st.columns(7)
-columns[1].write(f" ###### Day-Behind: **{ daybehind.strftime('%m/%d/%Y') }**")
-columns[3].write(f" ###### Today: **{ today.strftime('%m/%d/%Y') }**")
+columns[1].write(f" ##### Day-Behind: **{ daybehind.strftime('%m/%d/%Y') }**")
+columns[3].write(f" ##### Today: **{ today.strftime('%m/%d/%Y') }**")
 columns[5].write(f" ###### Day-Ahead: **{ dayahead.strftime('%m/%d/%Y') }**")
 
 ### Show plots =================================================================
