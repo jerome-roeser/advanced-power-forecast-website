@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as dates
 import plotly.graph_objects as go
 
+st.set_page_config(layout="wide")
+
 
 ### API call ==================================================================
 #base_url = "http://127.0.0.1:8000"
@@ -36,23 +38,20 @@ def call_visu(today_date):
 # Session states and Callbacks =================================================
 # (see:https://docs.streamlit.io/library/advanced-features/button-behavior-and-examples)
 
+# initialize session states
+if 'today' not in st.session_state:
+    st.session_state['today'] = dt.date(2020, 6, 2) # default date
+
+if 'plot_df' not in st.session_state:
+    st.session_state['plot_df'] = call_visu( st.session_state['today'] )
+
+# define callbacks
 def add_day():
     st.session_state['today'] += dt.timedelta(days=1)
     st.session_state['plot_df'] = call_visu( st.session_state['today'] )
 
 def sub_day():
     st.session_state['today'] -= dt.timedelta(days=1)
-    st.session_state['plot_df'] = call_visu( st.session_state['today'] )
-
-# def calender(b):
-#     st.session_state['plot_df'] = call_visu( b )
-
-
-# initialize session states
-if 'today' not in st.session_state:
-    st.session_state['today'] = dt.date(2021, 7, 6) # default date
-
-if 'plot_df' not in st.session_state:
     st.session_state['plot_df'] = call_visu( st.session_state['today'] )
 
 # ==============================================================================
@@ -62,7 +61,6 @@ if 'plot_df' not in st.session_state:
 st.sidebar.markdown(f"""
    # User Input
    """)
-
 
 # Calender select
 calender_today = st.sidebar.date_input(
@@ -84,20 +82,31 @@ columns[0].button('Day before', on_click=sub_day)
 columns[1].button('Day after', on_click=add_day)
 
 # Show values
-show_true = st.sidebar.radio('Show true values', ('Yes', 'No'))
-
+show_true = st.sidebar.radio('Show true values', ('No', 'Yes'))
 
 
 ### Main window ====================================================================
+# <p style="text-align: center;">Text_content</p>
 
 f"""
 # Day-Ahead Power Forecast
-(v0.2)
 
-Today is the **{st.session_state['today']}**. The Day-Ahead prediction is for the \
-     **{st.session_state['today'] + pd.Timedelta(days=1)}**.
+#
 
 """
+
+# #### Today: **{st.session_state['today']}**   Day-Ahead: \
+#      **{st.session_state['today'] + pd.Timedelta(days=1)}**
+
+daybehind = st.session_state['today'] - pd.Timedelta(days=1)
+today = st.session_state['today']
+dayahead = st.session_state['today'] + pd.Timedelta(days=1)
+
+
+columns = st.columns(7)
+columns[1].write(f" ##### Day-Behind: **{ daybehind.strftime('%m/%d/%Y') }**")
+columns[3].write(f" ##### Today: **{ today.strftime('%m/%d/%Y') }**")
+columns[5].write(f" ###### Day-Ahead: **{ dayahead.strftime('%m/%d/%Y') }**")
 
 ### Show plots =================================================================
 # used in the plots
@@ -165,11 +174,11 @@ ax.set_ylim(0,120.0)
 ax.set_xlabel('Time')
 ax.set_ylabel('Capacity factor in %')
 
-ax.annotate('day-ahead',(0.77,0.9), xycoords='subfigure fraction')
-ax.annotate('today',(0.48,0.9), xycoords='subfigure fraction')
-ax.annotate('day-behind',(0.15,0.9), xycoords='subfigure fraction')
-ax.annotate('order book closed',(0.51,0.77), xycoords='subfigure fraction')
-ax.set_title(f"Day Ahead prediction for { sep_future.strftime('%d/%m/%Y') }")
+ax.annotate('Day-Ahead',(0.77,0.9), xycoords='subfigure fraction')
+ax.annotate('Today',(0.48,0.9), xycoords='subfigure fraction')
+ax.annotate('Day-Behind',(0.15,0.9), xycoords='subfigure fraction')
+ax.annotate('Order book closed',(0.51,0.77), xycoords='subfigure fraction')
+#ax.set_title(f"Day Ahead prediction for { sep_future.strftime('%d/%m/%Y') }")
 
 ax.legend();
 
