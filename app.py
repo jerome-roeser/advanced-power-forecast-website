@@ -104,9 +104,13 @@ dayahead = st.session_state['today'] + pd.Timedelta(days=1)
 
 
 columns = st.columns(7)
-columns[1].write(f" ##### Day-Behind: **{ daybehind.strftime('%m/%d/%Y') }**")
-columns[3].write(f" ##### Today: **{ today.strftime('%m/%d/%Y') }**")
-columns[5].write(f" ###### Day-Ahead: **{ dayahead.strftime('%m/%d/%Y') }**")
+columns[1].write(f" ##### Day-Behind ")
+columns[3].write(f" #####   Today    ")
+columns[5].write(f" ##### Day-Ahead  ")
+
+columns[1].write(f" ###### **{ daybehind.strftime('%m/%d/%Y') }**")
+columns[3].write(f" ###### **{ today.strftime('%m/%d/%Y') }**    ")
+columns[5].write(f" ###### **{ dayahead.strftime('%m/%d/%Y') }** ")
 
 ### Show plots =================================================================
 # used in the plots
